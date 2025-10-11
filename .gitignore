@@ -1,1 +1,15 @@
 /data
+
+/yolo_dataset
+
+
+/.gradio
+
+/runs
+
+/YOLO11N
+
+
+*.pt
+
+*.pth
