@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jetson Camera Feed</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .header {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .status {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            font-size: 1.1em;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .video-container {
+            position: relative;
+            max-width: 90vw;
+            max-height: 70vh;
+            border: 3px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+            background-color: #1a1a1a;
+        }
+
+        #videoStream {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+
+        .error-message {
+            display: none;
+            color: #ff4444;
+            padding: 20px;
+            background-color: #2a1a1a;
+            border-radius: 8px;
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .loading {
+            color: #fff;
+            font-size: 1.5em;
+            text-align: center;
+        }
+
+        .info-footer {
+            color: #888;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        /* Fullscreen mode styles */
+        .fullscreen-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+            display: none;
+        }
+
+        .fullscreen-btn:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .video-container:hover .fullscreen-btn {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎥 Jetson Orin Camera Feed</h1>
+            <div class="status">
+                <span class="status-indicator" id="statusIndicator"></span>
+                <span id="statusText">Live Stream Active</span>
+                <span id="resolution">640x480 @ 30fps</span>
+            </div>
+        </div>
+
+        <div class="video-container">
+            <img id="videoStream" alt="Camera Feed">
+            <button class="fullscreen-btn" onclick="toggleFullscreen()">Fullscreen</button>
+        </div>
+
+        <div class="error-message" id="errorMessage">
+            <h2>⚠️ Connection Error</h2>
+            <p id="errorText">Unable to connect to camera stream</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">Retrying...</p>
+        </div>
+
+        <div class="loading" id="loadingMessage">
+            Loading camera feed...
+        </div>
+
+        <div class="info-footer">
+            <p>Jetson Orin Nano • USB Camera Stream</p>
+        </div>
+    </div>
+
+    <script>
+        const videoStream = document.getElementById('videoStream');
+        const errorMessage = document.getElementById('errorMessage');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+
+        // Configuration
+        const SERVER_URL = window.location.origin;
+        const STREAM_ENDPOINT = '/video_feed';
+        const HEALTH_ENDPOINT = '/health';
+        const RETRY_INTERVAL = 5000; // 5 seconds
+
+        let healthCheckInterval;
+        let streamActive = false;
+
+        // Initialize stream
+        function initStream() {
+            const streamUrl = SERVER_URL + STREAM_ENDPOINT;
+            videoStream.src = streamUrl;
+            
+            videoStream.onload = function() {
+                streamActive = true;
+                loadingMessage.style.display = 'none';
+                errorMessage.classList.remove('show');
+                videoStream.style.display = 'block';
+                updateStatus('connected');
+                console.log('Stream loaded successfully');
+            };
+
+            videoStream.onerror = function() {
+                streamActive = false;
+                videoStream.style.display = 'none';
+                loadingMessage.style.display = 'none';
+                errorMessage.classList.add('show');
+                updateStatus('error');
+                console.error('Stream error, will retry...');
+                
+                // Retry after interval
+                setTimeout(initStream, RETRY_INTERVAL);
+            };
+        }
+
+        // Update status indicator
+        function updateStatus(status) {
+            if (status === 'connected') {
+                statusIndicator.style.backgroundColor = '#4CAF50';
+                statusText.textContent = 'Live Stream Active';
+            } else if (status === 'error') {
+                statusIndicator.style.backgroundColor = '#ff4444';
+                statusText.textContent = 'Connection Lost';
+            } else {
+                statusIndicator.style.backgroundColor = '#FFA500';
+                statusText.textContent = 'Connecting...';
+            }
+        }
+
+        // Health check
+        async function checkHealth() {
+            try {
+                const response = await fetch(SERVER_URL + HEALTH_ENDPOINT);
+                const data = await response.json();
+                
+                if (data.status === 'healthy' && !streamActive) {
+                    initStream();
+                }
+            } catch (error) {
+                console.error('Health check failed:', error);
+            }
+        }
+
+        // Fullscreen toggle
+        function toggleFullscreen() {
+            const container = document.querySelector('.video-container');
+            
+            if (!document.fullscreenElement) {
+                container.requestFullscreen().catch(err => {
+                    console.error('Error attempting to enable fullscreen:', err);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // F key for fullscreen
+            if (e.key === 'f' || e.key === 'F') {
+                toggleFullscreen();
+            }
+            // R key to reload stream
+            if (e.key === 'r' || e.key === 'R') {
+                location.reload();
+            }
+        });
+
+        // Initialize on page load
+        window.onload = function() {
+            console.log('Initializing camera stream...');
+            updateStatus('connecting');
+            initStream();
+            
+            // Start health check interval
+            healthCheckInterval = setInterval(checkHealth, 10000); // Check every 10 seconds
+        };
+
+        // Cleanup on page unload
+        window.onbeforeunload = function() {
+            if (healthCheckInterval) {
+                clearInterval(healthCheckInterval);
+            }
+        };
+    </script>
+</body>
+</html>

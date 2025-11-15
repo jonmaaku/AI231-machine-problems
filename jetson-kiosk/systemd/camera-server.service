@@ -1,0 +1,18 @@
+[Unit]
+Description=Jetson Camera Video Streaming Server
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+WorkingDirectory=/home/YOUR_USERNAME/jetson-kiosk
+Environment="PATH=/home/YOUR_USERNAME/jetson-kiosk/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/home/YOUR_USERNAME/jetson-kiosk/venv/bin/python /home/YOUR_USERNAME/jetson-kiosk/server.py
+Restart=always
+RestartSec=10
+
+# Camera access permissions
+SupplementaryGroups=video
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Jetson Camera Kiosk
+Exec=/home/YOUR_USERNAME/jetson-kiosk/scripts/start-kiosk.sh
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Comment=Launch camera feed in kiosk mode
