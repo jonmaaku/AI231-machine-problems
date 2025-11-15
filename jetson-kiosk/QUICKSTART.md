@@ -118,8 +118,37 @@ sudo journalctl -u camera-server -f     # Follow logs
 ./scripts/start-server.sh               # Start server manually
 ./scripts/test-setup.sh                 # Test camera setup
 
+# Kiosk control
+./scripts/stop-kiosk.sh                 # Stop kiosk mode
+./scripts/toggle-restart.sh             # Toggle auto-restart
+
 # Uninstall
 ./scripts/uninstall.sh                  # Remove kiosk setup
+```
+
+## 🚪 How to Exit Kiosk Mode
+
+When kiosk is running, you have several options:
+
+### Option 1: Exit Button
+- Move mouse to show **"EXIT KIOSK"** button (top-right)
+- Click and confirm
+
+### Option 2: Keyboard
+- Press **ESC** or **Q**
+- Confirm in dialog
+
+### Option 3: Terminal
+```bash
+# Switch to console: Ctrl+Alt+F2
+# Login, then run:
+~/jetson-kiosk/scripts/stop-kiosk.sh
+```
+
+### Option 4: SSH
+```bash
+ssh user@jetson-ip
+~/jetson-kiosk/scripts/stop-kiosk.sh
 ```
 
 ## 🌐 Access from Network

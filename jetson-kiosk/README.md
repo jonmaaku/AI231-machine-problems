@@ -231,8 +231,47 @@ echo "xset s off; xset s noblank; xset -dpms" >> ~/.xsessionrc
 
 ## ⌨️ Keyboard Shortcuts (in Kiosk)
 
+- **ESC** or **Q** - Show exit confirmation dialog
 - **F** - Toggle fullscreen
 - **R** - Reload page
+- **Alt+F4** - Force close browser (Linux)
+
+## 🚪 Exiting Kiosk Mode
+
+### Method 1: Using Exit Button (Recommended)
+1. Move your mouse to show the **"EXIT KIOSK"** button (top-right corner)
+2. Click the button
+3. Confirm exit in the dialog
+4. Browser will close or show exit screen
+
+### Method 2: Keyboard Shortcut
+1. Press **ESC** or **Q** key
+2. Confirm exit in the dialog
+
+### Method 3: Stop from Terminal
+```bash
+# Stop kiosk and prevent auto-restart
+~/jetson-kiosk/scripts/stop-kiosk.sh
+
+# Or manually
+rm /tmp/jetson-kiosk-restart
+pkill chromium
+```
+
+### Method 4: Disable Auto-Restart
+```bash
+# Toggle auto-restart on/off
+~/jetson-kiosk/scripts/toggle-restart.sh
+
+# Or manually disable
+rm /tmp/jetson-kiosk-restart
+```
+
+### Method 5: Switch to TTY Console
+1. Press **Ctrl+Alt+F2** (or F3, F4) to switch to console
+2. Login with your credentials
+3. Run: `~/jetson-kiosk/scripts/stop-kiosk.sh`
+4. Press **Ctrl+Alt+F7** to return to GUI (or F1)
 
 ## 🔄 Management Commands
 
@@ -264,6 +303,12 @@ sudo journalctl -u camera-server -f
 # Remove autostart entry
 rm ~/.config/autostart/camera-kiosk.desktop
 
+# Disable auto-restart
+rm /tmp/jetson-kiosk-restart
+
+# Stop currently running kiosk
+~/jetson-kiosk/scripts/stop-kiosk.sh
+
 # Reboot
 sudo reboot
 ```
@@ -274,8 +319,20 @@ sudo reboot
 # Restore autostart entry
 cp ~/jetson-kiosk/systemd/camera-kiosk.desktop ~/.config/autostart/
 
+# Enable auto-restart
+touch /tmp/jetson-kiosk-restart
+
 # Reboot
 sudo reboot
+```
+
+### Temporarily Exit Kiosk (Will Restart on Reboot)
+
+```bash
+# Just stop kiosk for now
+~/jetson-kiosk/scripts/stop-kiosk.sh
+
+# Or press ESC/Q in the browser and confirm exit
 ```
 
 ## 🎨 Customization
