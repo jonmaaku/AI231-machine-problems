@@ -8,11 +8,32 @@
 scp -r jetson-kiosk/ your-jetson-username@jetson-ip:~/
 ```
 
-### Step 2: Install
+### Step 2: Check System (IMPORTANT) ⭐
 ```bash
 ssh your-jetson-username@jetson-ip
 cd ~/jetson-kiosk
 chmod +x scripts/*.sh
+
+# Run system check first
+./scripts/check-system.sh
+
+# Or quick camera test
+./scripts/quick-test.sh
+```
+
+**Don't skip this!** It checks:
+- ✅ Python version
+- ✅ Camera connected
+- ✅ Camera accessible
+- ✅ Required packages
+- ✅ Permissions
+- ✅ Display server
+- ✅ Disk space
+- ✅ And more...
+
+### Step 3: Install
+```bash
+# If checks passed, proceed with installation
 ./scripts/install.sh
 ```
 
@@ -29,6 +50,27 @@ chromium-browser http://localhost:8000
 ```bash
 # Reboot to test auto-start
 sudo reboot
+```
+
+## 🧪 Testing Without Full Installation
+
+Want to test first without installing system services?
+
+```bash
+# 1. Quick system check
+./scripts/quick-test.sh
+
+# 2. If checks pass, install Python packages
+pip3 install fastapi uvicorn opencv-python
+
+# 3. Run server manually
+python3 server.py
+
+# 4. Test in browser
+chromium-browser http://localhost:8000
+
+# 5. If it works, proceed with full installation
+./scripts/install.sh
 ```
 
 ## 📋 Pre-Installation Checklist

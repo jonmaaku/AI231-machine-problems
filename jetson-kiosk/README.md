@@ -39,7 +39,29 @@ cd jetson-kiosk
 scp -r jetson-kiosk/ your-jetson:~/
 ```
 
-### 2. Run Installation Script
+### 2. Check System First (Recommended) ⭐
+
+Before installing, verify your system is ready:
+
+```bash
+cd ~/jetson-kiosk
+chmod +x scripts/*.sh
+
+# Comprehensive system check (recommended)
+./scripts/check-system.sh
+
+# Or quick camera test
+./scripts/quick-test.sh
+```
+
+**This will check:**
+- Python version, camera availability, permissions
+- Required packages, disk space, display server
+- And provide specific fix instructions if needed
+
+See [JETSON_TESTING.md](JETSON_TESTING.md) for detailed testing guide.
+
+### 3. Run Installation Script
 
 ```bash
 cd ~/jetson-kiosk
