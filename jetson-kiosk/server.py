@@ -20,9 +20,9 @@ app = FastAPI(title="Jetson Camera Stream")
 
 # Camera configuration
 CAMERA_INDEX = 0  # USB camera index (usually 0, adjust if needed)
-VGA_WIDTH = 640
-VGA_HEIGHT = 480
-FPS = 30
+VGA_WIDTH = 1080
+VGA_HEIGHT = 720
+FPS = 60
 
 # Global camera object
 camera = None

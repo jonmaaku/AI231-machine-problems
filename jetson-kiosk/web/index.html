@@ -322,10 +322,10 @@
         let streamActive = false;
 
         // Initialize stream
-        function initStream() {
+        async function initStream() {
             const streamUrl = SERVER_URL + STREAM_ENDPOINT;
             videoStream.src = streamUrl;
-            
+
             videoStream.onload = function() {
                 streamActive = true;
                 loadingMessage.style.display = 'none';
@@ -346,6 +346,11 @@
                 // Retry after interval
                 setTimeout(initStream, RETRY_INTERVAL);
             };
+            const response = await fetch(SERVER_URL + HEALTH_ENDPOINT);
+           
+            const data = await response.json();
+            updateCameraInfo(data.resolution, data.fps);
+
         }
 
         // Update status indicator
@@ -360,6 +365,12 @@
                 statusIndicator.style.backgroundColor = '#FFA500';
                 statusText.textContent = 'Connecting...';
             }
+        }
+
+        
+        function updateCameraInfo(resolution, fps) {
+            const resolutionSpan = document.getElementById('resolution');
+            resolutionSpan.textContent = `${resolution} @ ${fps}fps`;
         }
 
         // Health check
@@ -438,6 +449,7 @@
                 location.reload();
             }
         });
+        
 
         // Initialize on page load
         window.onload = function() {
