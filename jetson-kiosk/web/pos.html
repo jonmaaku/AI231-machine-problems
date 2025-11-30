@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jetson POS System - YOLO Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            height: 100vh;
+        }
+
+        /* Camera Section */
+        .camera-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: white;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .video-container {
+            flex: 1;
+            position: relative;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            min-height: 400px;
+        }
+
+        #videoStream {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .performance-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .performance-info div {
+            margin: 3px 0;
+        }
+
+        .latency-indicator {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 5px;
+        }
+
+        .latency-good {
+            background: #4CAF50;
+        }
+
+        .latency-warning {
+            background: #FFA500;
+        }
+
+        .latency-bad {
+            background: #f44336;
+        }
+
+        /* Cart Section */
+        .cart-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            max-height: 100vh;
+            overflow: hidden;
+        }
+
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .cart-header h2 {
+            font-size: 1.8em;
+            color: #333;
+        }
+
+        .cart-count {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .cart-items {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding-right: 10px;
+        }
+
+        .cart-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-left: 4px solid #667eea;
+        }
+
+        .cart-item:hover {
+            transform: translateX(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .item-category {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .item-price {
+            font-size: 1em;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .item-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 5px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .qty-btn {
+            width: 30px;
+            height: 30px;
+            border: none;
+            background: #667eea;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .qty-btn:hover {
+            background: #5568d3;
+        }
+
+        .qty-display {
+            min-width: 30px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .remove-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s;
+        }
+
+        .remove-btn:hover {
+            background: #d32f2f;
+        }
+
+        .empty-cart {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-size: 1.1em;
+        }
+
+        .cart-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+
+        .summary-total {
+            font-size: 1.5em;
+            font-weight: bold;
+            padding-top: 15px;
+            margin-top: 15px;
+            border-top: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .cart-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .checkout-btn {
+            background: #4CAF50;
+            color: white;
+            grid-column: 1 / -1;
+        }
+
+        .checkout-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .clear-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .clear-btn:hover {
+            background: #d32f2f;
+        }
+
+        .scan-btn {
+            background: #2196F3;
+            color: white;
+        }
+
+        .scan-btn:hover {
+            background: #1976D2;
+        }
+
+        /* Auto-scan toggle */
+        .auto-scan-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 26px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #4CAF50;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Receipt Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .receipt {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .receipt h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .receipt-header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 2px dashed #ddd;
+            margin-bottom: 20px;
+        }
+
+        .receipt-items {
+            margin: 20px 0;
+        }
+
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .receipt-footer {
+            border-top: 2px dashed #ddd;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+
+        .close-modal-btn {
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .close-modal-btn:hover {
+            background: #5568d3;
+        }
+
+        /* Scrollbar styling */
+        .cart-items::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .cart-items::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .cart-items::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        .cart-items::-webkit-scrollbar-thumb:hover {
+            background: #5568d3;
+        }
+
+        /* Responsive design */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Camera Section -->
+        <div class="camera-section">
+            <div class="header">
+                <h1>
+                    <span>🎥</span>
+                    POS Scanner
+                </h1>
+                <div class="status-badge">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Live</span>
+                </div>
+            </div>
+
+            <div class="auto-scan-toggle">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoScanToggle" checked>
+                    <span class="slider"></span>
+                </label>
+                <span style="font-weight: 600;">Auto-Scan Mode</span>
+                <span style="color: #666; font-size: 0.9em;">(Automatically adds detected items)</span>
+            </div>
+
+            <div class="video-container">
+                <img id="videoStream" alt="Camera Feed">
+                <div class="performance-info">
+                    <div>⚡ Latency: <span id="latencyValue">0ms</span><span id="latencyIndicator" class="latency-indicator latency-good">OK</span></div>
+                    <div>🎯 Detections: <span id="detectionsCount">0</span></div>
+                    <div>📷 FPS: <span id="fpsValue">0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cart Section -->
+        <div class="cart-section">
+            <div class="cart-header">
+                <h2>🛒 Shopping Cart</h2>
+                <div class="cart-count" id="cartCount">0 items</div>
+            </div>
+
+            <div class="cart-items" id="cartItems">
+                <div class="empty-cart">
+                    <p>🛍️ Cart is empty</p>
+                    <p style="font-size: 0.9em; margin-top: 10px;">Scan items to add them</p>
+                </div>
+            </div>
+
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>Total Items:</span>
+                    <span id="totalItems">0</span>
+                </div>
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span id="subtotal">$0.00</span>
+                </div>
+                <div class="summary-row summary-total">
+                    <span>TOTAL:</span>
+                    <span id="totalPrice">$0.00</span>
+                </div>
+            </div>
+
+            <div class="cart-actions">
+                <button class="action-btn scan-btn" onclick="manualScan()">📸 Scan Now</button>
+                <button class="action-btn clear-btn" onclick="clearCart()">🗑️ Clear</button>
+                <button class="action-btn checkout-btn" onclick="checkout()">💳 Checkout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div class="modal" id="receiptModal">
+        <div class="receipt">
+            <h2>✅ Receipt</h2>
+            <div class="receipt-header">
+                <div style="font-size: 1.2em; font-weight: 600;">Jetson POS System</div>
+                <div style="color: #666; margin-top: 5px;">Transaction ID: <span id="transactionId"></span></div>
+                <div style="color: #666; margin-top: 5px;" id="transactionTime"></div>
+            </div>
+            <div class="receipt-items" id="receiptItems"></div>
+            <div class="receipt-footer">
+                <div class="summary-row" style="font-size: 1.2em;">
+                    <strong>Total Items:</strong>
+                    <strong id="receiptTotalItems">0</strong>
+                </div>
+                <div class="summary-row" style="font-size: 1.5em; color: #667eea; margin-top: 10px;">
+                    <strong>TOTAL:</strong>
+                    <strong id="receiptTotal">$0.00</strong>
+                </div>
+            </div>
+            <button class="close-modal-btn" onclick="closeReceipt()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const SERVER_URL = window.location.origin;
+        let autoScanEnabled = true;
+        let scanInterval = null;
+        let lastDetectionTime = 0;
+        let fpsCounter = 0;
+        let lastFpsUpdate = Date.now();
+
+        // Initialize
+        window.onload = function() {
+            initVideoStream();
+            loadCart();
+            startAutoScan();
+        };
+
+        // Video stream
+        function initVideoStream() {
+            const videoStream = document.getElementById('videoStream');
+            videoStream.src = SERVER_URL + '/video_feed';
+            
+            videoStream.onload = () => {
+                console.log('Video stream loaded');
+                updateFPS();
+            };
+        }
+
+        // Auto-scan toggle
+        document.getElementById('autoScanToggle').addEventListener('change', (e) => {
+            autoScanEnabled = e.target.checked;
+            if (autoScanEnabled) {
+                startAutoScan();
+            } else {
+                stopAutoScan();
+            }
+        });
+
+        // Start auto-scan
+        function startAutoScan() {
+            if (scanInterval) clearInterval(scanInterval);
+            scanInterval = setInterval(performDetection, 1000); // Scan every second
+        }
+
+        // Stop auto-scan
+        function stopAutoScan() {
+            if (scanInterval) {
+                clearInterval(scanInterval);
+                scanInterval = null;
+            }
+        }
+
+        // Perform detection
+        async function performDetection() {
+            const startTime = performance.now();
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/api/detect`);
+                const data = await response.json();
+                
+                const latency = performance.now() - startTime;
+                updateLatency(latency);
+                
+                if (data.detections && data.detections.length > 0) {
+                    document.getElementById('detectionsCount').textContent = data.detections.length;
+                    
+                    if (autoScanEnabled) {
+                        // Add first detected item to cart
+                        await addToCart(data.detections[0]);
+                    }
+                } else {
+                    document.getElementById('detectionsCount').textContent = '0';
+                }
+            } catch (error) {
+                console.error('Detection error:', error);
+            }
+        }
+
+        // Manual scan
+        async function manualScan() {
+            await performDetection();
+        }
+
+        // Update latency display
+        function updateLatency(latency) {
+            const latencyValue = document.getElementById('latencyValue');
+            const latencyIndicator = document.getElementById('latencyIndicator');
+            
+            latencyValue.textContent = `${Math.round(latency)}ms`;
+            
+            latencyIndicator.className = 'latency-indicator';
+            if (latency < 500) {
+                latencyIndicator.classList.add('latency-good');
+                latencyIndicator.textContent = 'FAST';
+            } else if (latency < 1000) {
+                latencyIndicator.classList.add('latency-warning');
+                latencyIndicator.textContent = 'OK';
+            } else {
+                latencyIndicator.classList.add('latency-bad');
+                latencyIndicator.textContent = 'SLOW';
+            }
+        }
+
+        // Update FPS
+        function updateFPS() {
+            fpsCounter++;
+            const now = Date.now();
+            if (now - lastFpsUpdate >= 1000) {
+                document.getElementById('fpsValue').textContent = fpsCounter;
+                fpsCounter = 0;
+                lastFpsUpdate = now;
+            }
+            requestAnimationFrame(updateFPS);
+        }
+
+        // Add to cart
+        async function addToCart(item) {
+            try {
+                const response = await fetch(`${SERVER_URL}/api/cart/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item)
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    await loadCart();
+                }
+            } catch (error) {
+                console.error('Add to cart error:', error);
+            }
+        }
+
+        // Load cart
+        async function loadCart() {
+            try {
+                const response = await fetch(`${SERVER_URL}/api/cart`);
+                const data = await response.json();
+                
+                updateCartDisplay(data);
+            } catch (error) {
+                console.error('Load cart error:', error);
+            }
+        }
+
+        // Update cart display
+        function updateCartDisplay(cartData) {
+            const cartItems = document.getElementById('cartItems');
+            const cartCount = document.getElementById('cartCount');
+            const totalItems = document.getElementById('totalItems');
+            const subtotal = document.getElementById('subtotal');
+            const totalPrice = document.getElementById('totalPrice');
+            
+            cartCount.textContent = `${cartData.total_items} items`;
+            totalItems.textContent = cartData.total_items;
+            subtotal.textContent = `$${cartData.total_price.toFixed(2)}`;
+            totalPrice.textContent = `$${cartData.total_price.toFixed(2)}`;
+            
+            if (cartData.items.length === 0) {
+                cartItems.innerHTML = `
+                    <div class="empty-cart">
+                        <p>🛍️ Cart is empty</p>
+                        <p style="font-size: 0.9em; margin-top: 10px;">Scan items to add them</p>
+                    </div>
+                `;
+            } else {
+                cartItems.innerHTML = cartData.items.map(item => `
+                    <div class="cart-item">
+                        <div class="item-info">
+                            <div class="item-name">${item.name}</div>
+                            <div class="item-category">${item.category}</div>
+                            <div class="item-price">$${item.price.toFixed(2)} each</div>
+                        </div>
+                        <div class="item-controls">
+                            <div class="quantity-control">
+                                <button class="qty-btn" onclick="updateQuantity('${item.name}', ${item.quantity - 1})">-</button>
+                                <span class="qty-display">${item.quantity}</span>
+                                <button class="qty-btn" onclick="updateQuantity('${item.name}', ${item.quantity + 1})">+</button>
+                            </div>
+                            <button class="remove-btn" onclick="removeItem('${item.name}')">✕</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Update quantity
+        async function updateQuantity(itemName, quantity) {
+            try {
+                const response = await fetch(`${SERVER_URL}/api/cart/update?item_name=${encodeURIComponent(itemName)}&quantity=${quantity}`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    await loadCart();
+                }
+            } catch (error) {
+                console.error('Update quantity error:', error);
+            }
+        }
+
+        // Remove item
+        async function removeItem(itemName) {
+            try {
+                const response = await fetch(`${SERVER_URL}/api/cart/remove?item_name=${encodeURIComponent(itemName)}`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    await loadCart();
+                }
+            } catch (error) {
+                console.error('Remove item error:', error);
+            }
+        }
+
+        // Clear cart
+        async function clearCart() {
+            if (!confirm('Clear all items from cart?')) return;
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/api/cart/clear`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    await loadCart();
+                }
+            } catch (error) {
+                console.error('Clear cart error:', error);
+            }
+        }
+
+        // Checkout
+        async function checkout() {
+            try {
+                const response = await fetch(`${SERVER_URL}/api/cart/checkout`, {
+                    method: 'POST'
+                });
+                
+                const receipt = await response.json();
+                showReceipt(receipt);
+            } catch (error) {
+                console.error('Checkout error:', error);
+            }
+        }
+
+        // Show receipt
+        function showReceipt(receipt) {
+            document.getElementById('transactionId').textContent = receipt.transaction_id;
+            document.getElementById('transactionTime').textContent = new Date(receipt.checkout_time).toLocaleString();
+            document.getElementById('receiptTotalItems').textContent = receipt.total_items;
+            document.getElementById('receiptTotal').textContent = `$${receipt.total_price.toFixed(2)}`;
+            
+            const receiptItems = document.getElementById('receiptItems');
+            receiptItems.innerHTML = receipt.items.map(item => `
+                <div class="receipt-item">
+                    <div>
+                        <div style="font-weight: 600;">${item.name}</div>
+                        <div style="font-size: 0.9em; color: #666;">Qty: ${item.quantity} × $${item.price.toFixed(2)}</div>
+                    </div>
+                    <div style="font-weight: 600; color: #667eea;">
+                        $${(item.quantity * item.price).toFixed(2)}
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('receiptModal').classList.add('show');
+            loadCart(); // Refresh cart (should be empty now)
+        }
+
+        // Close receipt
+        function closeReceipt() {
+            document.getElementById('receiptModal').classList.remove('show');
+        }
+    </script>
+</body>
+</html>

@@ -1,105 +1,396 @@
-# Jetson Orin Camera Kiosk
+# Jetson Orin POS System with YOLO Detection
 
-A complete solution for running a real-time USB camera video feed on Jetson Orin with automatic boot-up in kiosk mode.
+A complete Point-of-Sale (POS) system with real-time YOLO object detection for NVIDIA Jetson Orin. Features <0.5s latency, automatic product scanning, shopping cart management, and kiosk mode operation.
 
 ## 🎯 Features
 
-- **FastAPI Video Server**: Streams VGA (640x480) video from USB camera via MJPEG
-- **Modern Web Interface**: Clean, responsive UI with real-time video display
-- **Auto-Start on Boot**: Systemd service starts video server automatically
-- **Kiosk Mode**: Chromium launches in fullscreen kiosk mode on startup
-- **Auto-Login**: Configured for automatic user login
-- **Health Monitoring**: Built-in health check endpoints
-- **Error Recovery**: Automatic retry and reconnection logic
+### Core POS Features
+- **Real-time YOLO Detection**: YOLOv8/v11 object detection optimized for Jetson hardware
+- **Low Latency**: <500ms inference time for real-time product scanning
+- **Auto-Scan Mode**: Automatically detects and adds products to cart
+- **Shopping Cart**: Real-time cart management with quantity controls
+- **Checkout System**: Complete transaction processing with receipt generation
+- **Product Database**: Pre-configured retail products with prices and categories
+
+### Technical Features
+- **FastAPI Backend**: High-performance async API server
+- **Modern Web Interface**: Responsive, touch-friendly POS interface
+- **TensorRT Optimization**: GPU-accelerated inference on Jetson
+- **Kiosk Mode**: Full-screen operation for retail environments
+- **Live Video Feed**: 1080x720 camera stream with YOLO annotations
+- **Performance Monitoring**: Real-time latency and FPS display
 
 ## 📋 Requirements
 
 ### Hardware
 - NVIDIA Jetson Orin (Nano/NX/AGX)
-- USB Camera (UVC compatible)
-- Display connected to Jetson
+- USB Camera (UVC compatible, 1080x720+ recommended)
+- Display (1920x1080 recommended)
+- 8GB+ RAM recommended
 
 ### Software
-- Ubuntu 20.04 or later (JetPack)
+- Ubuntu 20.04/22.04 (JetPack 5.0+)
 - Python 3.8+
-- Chromium browser
+- CUDA 11.4+ (included in JetPack)
+- Chromium browser (for kiosk mode)
 
 ## 🚀 Quick Start
 
-### 1. Clone or Copy Project
-
-Transfer the `jetson-kiosk` folder to your Jetson Orin:
-
-```bash
-# If using git
-git clone <repository-url>
-cd jetson-kiosk
-
-# Or copy the folder to your Jetson
-scp -r jetson-kiosk/ your-jetson:~/
-```
-
-### 2. Check System First (Recommended) ⭐
-
-Before installing, verify your system is ready:
+### Method 1: Automated Setup (Recommended)
 
 ```bash
 cd ~/jetson-kiosk
-chmod +x scripts/*.sh
-
-# Comprehensive system check (recommended)
-./scripts/check-system.sh
-
-# Or quick camera test
-./scripts/quick-test.sh
+chmod +x start_pos.sh
+./start_pos.sh
 ```
 
-**This will check:**
-- Python version, camera availability, permissions
-- Required packages, disk space, display server
-- And provide specific fix instructions if needed
+The script will:
+- Create virtual environment (if needed)
+- Install all dependencies
+- Download YOLO model
+- Start the POS server
 
-See [JETSON_TESTING.md](JETSON_TESTING.md) for detailed testing guide.
-
-### 3. Run Installation Script
+### Method 2: Manual Setup
 
 ```bash
-cd ~/jetson-kiosk
-chmod +x scripts/install.sh
-./scripts/install.sh
+# 1. Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# 2. Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# 3. Start server
+python server.py
 ```
 
-The installation script will:
-- ✅ Install system dependencies (Python, OpenCV, Chromium)
-- ✅ Set up Python virtual environment
-- ✅ Configure camera permissions
-- ✅ Install and enable systemd service
-- ✅ Configure auto-login
-- ✅ Set up kiosk mode autostart
-- ✅ Disable screen blanking
-- ✅ Test camera access
+### Access the POS System
 
-### 3. Start the Server (Manual Test)
+1. **POS Interface**: http://localhost:8000/pos.html
+2. **Camera Only**: http://localhost:8000/index.html
+3. **API Docs**: http://localhost:8000/docs
+
+## 🎮 Usage Guide
+
+### Auto-Scan Mode (Default)
+1. Enable "Auto-Scan Mode" toggle
+2. Place products in front of camera
+3. System automatically detects and adds items every second
+4. Review items in shopping cart
+
+### Manual Scan Mode
+1. Disable "Auto-Scan Mode"
+2. Position product in camera view
+3. Click "📸 Scan Now" button
+4. Item is added to cart
+
+### Cart Operations
+- **Adjust Quantity**: Use +/- buttons
+- **Remove Item**: Click ✕ button
+- **Clear All**: Click "🗑️ Clear" button
+- **Checkout**: Click "💳 Checkout" button
+
+### Performance Metrics
+The interface displays real-time performance:
+- **Latency**: Inference time (target: <500ms)
+  - 🟢 Green (FAST): <500ms
+  - 🟡 Orange (OK): 500-1000ms
+  - 🔴 Red (SLOW): >1000ms
+- **Detections**: Number of objects detected
+- **FPS**: Video stream frame rate
+
+## 🛠️ Configuration
+
+### Camera Settings
+
+Edit `server.py`:
+
+```python
+CAMERA_INDEX = 0      # Camera device index (0, 1, 2...)
+VGA_WIDTH = 1080      # Resolution width
+VGA_HEIGHT = 720      # Resolution height
+FPS = 60              # Target frame rate
+```
+
+### YOLO Model
+
+```python
+YOLO_MODEL = "yolov8n.pt"  # Model options:
+                            # yolov8n.pt - Fastest (recommended)
+                            # yolov8s.pt - Balanced
+                            # yolov8m.pt - More accurate
+                            # yolov11n.pt - Latest YOLO11
+
+CONFIDENCE_THRESHOLD = 0.5  # Detection confidence (0.0-1.0)
+IOU_THRESHOLD = 0.45        # Overlap threshold
+INFERENCE_SIZE = 640        # Input size (lower = faster)
+```
+
+### Product Database
+
+Add custom products in `server.py`:
+
+```python
+PRODUCT_DATABASE = {
+    "bottle": {
+        "name": "Water Bottle",
+        "price": 1.50,
+        "category": "Beverages"
+    },
+    "apple": {
+        "name": "Fresh Apple",
+        "price": 1.29,
+        "category": "Fruits"
+    },
+    # Add more products...
+}
+```
+
+**Note**: Product keys must match YOLO class names from the COCO dataset, or train a custom model.
+
+## 📊 API Endpoints
+
+### Video & Detection
+- `GET /video_feed` - MJPEG stream with YOLO annotations
+- `GET /api/detect` - Single frame detection with inference time
+
+### Cart Management
+- `GET /api/cart` - Get current cart contents
+- `POST /api/cart/add` - Add item to cart
+- `POST /api/cart/remove` - Remove item from cart
+- `POST /api/cart/update` - Update item quantity
+- `POST /api/cart/clear` - Clear all items
+- `POST /api/cart/checkout` - Process checkout & generate receipt
+
+### System
+- `GET /health` - Server health check
+- `GET /api/info` - Server and YOLO configuration
+- `GET /api/products` - Available products database
+
+## 🧪 Testing
+
+Run the diagnostic test script:
 
 ```bash
-# Start the service
-sudo systemctl start camera-server
-
-# Check status
-sudo systemctl status camera-server
-
-# View logs
-sudo journalctl -u camera-server -f
+python test_pos.py
 ```
 
-### 4. Test the Web Interface
+This tests:
+- Python dependencies
+- Camera access
+- YOLO model loading
+- Inference speed
+- API endpoints
+- Cart operations
 
-Open Chromium and navigate to:
-```
-http://localhost:8000
+## 🚀 Production Deployment
+
+### Auto-Start on Boot
+
+1. **Create systemd service**:
+
+```bash
+sudo nano /etc/systemd/system/pos-server.service
 ```
 
-You should see the camera feed with a modern UI.
+Add:
+
+```ini
+[Unit]
+Description=Jetson POS Server
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+WorkingDirectory=/home/YOUR_USERNAME/jetson-kiosk
+ExecStart=/home/YOUR_USERNAME/jetson-kiosk/venv/bin/python server.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+2. **Enable service**:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable pos-server
+sudo systemctl start pos-server
+```
+
+### Kiosk Mode Setup
+
+1. **Create autostart entry**:
+
+```bash
+mkdir -p ~/.config/autostart
+nano ~/.config/autostart/pos-kiosk.desktop
+```
+
+Add:
+
+```ini
+[Desktop Entry]
+Type=Application
+Name=POS Kiosk
+Exec=chromium-browser --kiosk --app=http://localhost:8000/pos.html
+Hidden=false
+X-GNOME-Autostart-enabled=true
+```
+
+2. **Disable screen blanking**:
+
+```bash
+gsettings set org.gnome.desktop.session idle-delay 0
+gsettings set org.gnome.desktop.screensaver lock-enabled false
+```
+
+## 🔧 Troubleshooting
+
+### Camera Not Detected
+
+```bash
+# List available cameras
+ls /dev/video*
+
+# Test specific camera
+v4l2-ctl --list-devices
+
+# Update CAMERA_INDEX in server.py
+```
+
+### Low FPS / High Latency
+
+1. **Use smaller YOLO model**: `yolov8n.pt` (fastest)
+2. **Reduce camera resolution**: 640x480
+3. **Lower inference size**: `INFERENCE_SIZE = 416`
+4. **Enable max performance**:
+   ```bash
+   sudo nvpmodel -m 0  # Max performance mode
+   sudo jetson_clocks   # Max clock speeds
+   ```
+
+### YOLO Not Detecting Products
+
+1. **Improve lighting**: Ensure good lighting conditions
+2. **Lower confidence threshold**: Set to 0.3-0.4
+3. **Check product classes**: Only COCO-trained objects are detected
+4. **Train custom model**: For store-specific products (see POS_SETUP_GUIDE.md)
+
+### Memory Issues
+
+```bash
+# Increase swap space
+sudo fallocate -l 8G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+### Import Errors
+
+```bash
+# Reinstall dependencies
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt --force-reinstall
+```
+
+## 📈 Performance Optimization
+
+### TensorRT Acceleration
+
+The system automatically exports YOLO to TensorRT on first run for optimal Jetson performance.
+
+### Jetson Power Modes
+
+```bash
+# Check current mode
+sudo nvpmodel -q
+
+# Set to maximum performance
+sudo nvpmodel -m 0
+
+# Enable max clock speeds
+sudo jetson_clocks
+
+# Check GPU/CPU usage
+sudo tegrastats
+```
+
+## 📚 Documentation
+
+- **[POS_SETUP_GUIDE.md](POS_SETUP_GUIDE.md)** - Complete setup and configuration guide
+- **[test_pos.py](test_pos.py)** - Run diagnostic tests
+- **[API Documentation](http://localhost:8000/docs)** - Interactive API docs (when server running)
+
+## 📁 Project Structure
+
+```
+jetson-kiosk/
+├── server.py              # Main POS server with YOLO
+├── requirements.txt       # Python dependencies
+├── test_pos.py           # Diagnostic test script
+├── start_pos.sh          # Quick start script (Linux)
+├── start_pos.ps1         # Quick start script (Windows)
+├── POS_SETUP_GUIDE.md    # Complete setup guide
+├── README.md             # This file
+├── web/
+│   ├── pos.html          # POS interface
+│   └── index.html        # Camera-only interface
+└── scripts/              # Installation and utility scripts
+```
+
+## ⚡ Quick Commands
+
+```bash
+# Start server
+python server.py
+
+# Run tests
+python test_pos.py
+
+# Check server status
+curl http://localhost:8000/health
+
+# Perform detection
+curl http://localhost:8000/api/detect
+
+# View cart
+curl http://localhost:8000/api/cart
+
+# Max performance mode
+sudo nvpmodel -m 0 && sudo jetson_clocks
+```
+
+## 📡 API Endpoints
+
+### Video & Detection
+- `GET /video_feed` - MJPEG stream with YOLO annotations
+- `GET /api/detect` - Single frame detection
+
+### Cart Management
+- `GET /api/cart` - Get cart contents
+- `POST /api/cart/add` - Add item
+- `POST /api/cart/remove` - Remove item
+- `POST /api/cart/update` - Update quantity
+- `POST /api/cart/clear` - Clear cart
+- `POST /api/cart/checkout` - Process checkout
+
+### System
+- `GET /health` - Server health
+- `GET /api/info` - Configuration
+- `GET /api/products` - Product database
+
+---
+
+**Built for NVIDIA Jetson Orin | Powered by YOLOv8/v11 | FastAPI Backend**
+
+*Real-time object detection meets point-of-sale efficiency*
 
 ### 5. Enable Full Kiosk Mode
 
