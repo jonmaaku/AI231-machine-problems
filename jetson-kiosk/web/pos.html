@@ -12,7 +12,7 @@
         }
 
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden;
             height: 100vh;
@@ -20,20 +20,24 @@
 
         .main-container {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-            padding: 20px;
+            
+            grid-template-areas: "camera-section cart-section";
+            
+            grid-template-columns: 2fr 1fr; /* Adjust column sizes */
+            gap: 0px;
+            padding: 0px;
             height: 100vh;
         }
 
         /* Camera Section */
         .camera-section {
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 20px;
+            border-radius: 0px;
+            padding: 0px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             display: flex;
             flex-direction: column;
+            grid-area: "camera-section";
         }
 
         .header {
@@ -42,7 +46,10 @@
             align-items: center;
             margin-bottom: 15px;
             padding-bottom: 15px;
-            border-bottom: 2px solid #667eea;
+            padding-top: 15px;
+            padding-left: 20px;
+            padding-right: 20px;
+            border-bottom: 2px solid #ffc107;
         }
 
         .header h1 {
@@ -131,13 +138,15 @@
         /* Cart Section */
         .cart-section {
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
+            border-radius: 0px;
             padding: 20px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             display: flex;
             flex-direction: column;
             max-height: 100vh;
+            grid-area: "cart-section";
             overflow: hidden;
+            
         }
 
         .cart-header {
@@ -146,7 +155,7 @@
             align-items: center;
             margin-bottom: 20px;
             padding-bottom: 15px;
-            border-bottom: 2px solid #667eea;
+            border-bottom: 2px solid #ffc107;
         }
 
         .cart-header h2 {
@@ -155,8 +164,8 @@
         }
 
         .cart-count {
-            background: #667eea;
-            color: white;
+            background: #ffc107;
+            color: #1a1a1a;
             padding: 5px 15px;
             border-radius: 20px;
             font-weight: 600;
@@ -178,7 +187,7 @@
             justify-content: space-between;
             align-items: center;
             transition: transform 0.2s, box-shadow 0.2s;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #ffc107;
         }
 
         .cart-item:hover {
@@ -205,7 +214,7 @@
 
         .item-price {
             font-size: 1em;
-            color: #667eea;
+            color: #ffc107;
             font-weight: 600;
         }
 
@@ -229,8 +238,8 @@
             width: 30px;
             height: 30px;
             border: none;
-            background: #667eea;
-            color: white;
+            background: #ffc107;
+            color: #1a1a1a;
             border-radius: 5px;
             cursor: pointer;
             font-size: 1.2em;
@@ -239,7 +248,7 @@
         }
 
         .qty-btn:hover {
-            background: #5568d3;
+            background: #ffb300;
         }
 
         .qty-display {
@@ -272,7 +281,8 @@
         }
 
         .cart-summary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border: 2px solid #ffc107;
             color: white;
             padding: 20px;
             border-radius: 10px;
@@ -295,9 +305,7 @@
         }
 
         .cart-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            display: none;
         }
 
         .action-btn {
@@ -312,33 +320,27 @@
         }
 
         .checkout-btn {
-            background: #4CAF50;
-            color: white;
-            grid-column: 1 / -1;
+            display: none;
         }
 
         .checkout-btn:hover {
-            background: #45a049;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+            display: none;
         }
 
         .clear-btn {
-            background: #f44336;
-            color: white;
+            display: none;
         }
 
         .clear-btn:hover {
-            background: #d32f2f;
+            display: none;
         }
 
         .scan-btn {
-            background: #2196F3;
-            color: white;
+            display: none;
         }
 
         .scan-btn:hover {
-            background: #1976D2;
+            display: none;
         }
 
         /* Auto-scan toggle */
@@ -347,9 +349,11 @@
             align-items: center;
             gap: 10px;
             padding: 10px;
-            background: #f8f9fa;
+            background: #2d2d2d;
+            border: 1px solid #ffc107;
             border-radius: 8px;
             margin-bottom: 15px;
+            color: white;
         }
 
         .toggle-switch {
@@ -389,7 +393,7 @@
         }
 
         input:checked + .slider {
-            background-color: #4CAF50;
+            background-color: #ffc107;
         }
 
         input:checked + .slider:before {
@@ -458,8 +462,8 @@
         .close-modal-btn {
             width: 100%;
             padding: 15px;
-            background: #667eea;
-            color: white;
+            background: #ffc107;
+            color: #1a1a1a;
             border: none;
             border-radius: 10px;
             font-size: 1.1em;
@@ -469,7 +473,7 @@
         }
 
         .close-modal-btn:hover {
-            background: #5568d3;
+            background: #ffb300;
         }
 
         /* Scrollbar styling */
@@ -483,12 +487,12 @@
         }
 
         .cart-items::-webkit-scrollbar-thumb {
-            background: #667eea;
+            background: #ffc107;
             border-radius: 10px;
         }
 
         .cart-items::-webkit-scrollbar-thumb:hover {
-            background: #5568d3;
+            background: #ffb300;
         }
 
         /* Responsive design */
@@ -507,21 +511,12 @@
             <div class="header">
                 <h1>
                     <span>🎥</span>
-                    POS Scanner
+                    SureGold Scanner
                 </h1>
                 <div class="status-badge">
                     <span class="status-dot"></span>
                     <span id="statusText">Live</span>
                 </div>
-            </div>
-
-            <div class="auto-scan-toggle">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="autoScanToggle" checked>
-                    <span class="slider"></span>
-                </label>
-                <span style="font-weight: 600;">Auto-Scan Mode</span>
-                <span style="color: #666; font-size: 0.9em;">(Automatically adds detected items)</span>
             </div>
 
             <div class="video-container">
@@ -597,11 +592,12 @@
 
     <script>
         const SERVER_URL = window.location.origin;
-        let autoScanEnabled = true;
         let scanInterval = null;
         let lastDetectionTime = 0;
         let fpsCounter = 0;
         let lastFpsUpdate = Date.now();
+        let lastAddedItems = {};  // Track recently added items to prevent duplicates
+        const DUPLICATE_COOLDOWN = 2000;  // 2 seconds before same item can be added again
 
         // Initialize
         window.onload = function() {
@@ -621,28 +617,10 @@
             };
         }
 
-        // Auto-scan toggle
-        document.getElementById('autoScanToggle').addEventListener('change', (e) => {
-            autoScanEnabled = e.target.checked;
-            if (autoScanEnabled) {
-                startAutoScan();
-            } else {
-                stopAutoScan();
-            }
-        });
-
-        // Start auto-scan
+        // Start auto-scan (always enabled)
         function startAutoScan() {
             if (scanInterval) clearInterval(scanInterval);
-            scanInterval = setInterval(performDetection, 1000); // Scan every second
-        }
-
-        // Stop auto-scan
-        function stopAutoScan() {
-            if (scanInterval) {
-                clearInterval(scanInterval);
-                scanInterval = null;
-            }
+            scanInterval = setInterval(performDetection, 200); // Scan every 200ms
         }
 
         // Perform detection
@@ -659,10 +637,18 @@
                 if (data.detections && data.detections.length > 0) {
                     document.getElementById('detectionsCount').textContent = data.detections.length;
                     
-                    if (autoScanEnabled) {
-                        // Add first detected item to cart
-                        await addToCart(data.detections[0]);
-                    }
+                    // Always add detected items (auto-scan always enabled)
+                    data.detections.forEach(item => {
+                        const currentTime = Date.now();
+                        const lastAddedTime = lastAddedItems[item.name] || 0;
+                        const durationSinceLastAdd = currentTime - lastAddedTime;
+                        // Only add if item hasn't been added recently (within cooldown period)
+                        if (durationSinceLastAdd > DUPLICATE_COOLDOWN) {
+                            addToCart(item);
+                            
+                        }
+                        lastAddedItems[item.name] = currentTime;  // Update last added time
+                    });
                 } else {
                     document.getElementById('detectionsCount').textContent = '0';
                 }

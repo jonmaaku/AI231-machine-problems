@@ -37,7 +37,8 @@ VGA_HEIGHT = 720
 FPS = 60
 
 # YOLO configuration
-YOLO_MODEL = "best.pt"  # Nano model for speed (can use yolov8s.pt, yolov11n.pt)
+YOLO_MODEL = "weights\\v2dataset_yolo11n_best.pt" 
+# YOLO_MODEL = "best.pt" 
 CONFIDENCE_THRESHOLD = 0.5
 IOU_THRESHOLD = 0.45
 INFERENCE_SIZE = 640  # Input size for YOLO
@@ -77,9 +78,7 @@ PRODUCT_DATABASE = {
     "555-sardines": {"name": "555 Sardines", "price": 1.00, "category": "Canned Goods"},
     "meadows-truffle": {"name": "Meadows Truffle", "price": 4.00, "category": "Snacks"},
     "double-black": {"name": "Double Black Coffee", "price": 2.50, "category": "Beverages"},
-    "NongshimCupNoodles": {"name": "Nongshim Cup Noodles", "price": 1.75, "category": "Food"},
-    "Close": {"name": "Close-Up Toothpaste", "price": 2.25, "category": "Personal Care"},
-    "Open": {"name": "Open Product", "price": 0.00, "category": "Miscellaneous"}
+    "NongshimCupNoodles": {"name": "Nongshim Cup Noodles", "price": 1.75, "category": "Food"}
 }
 # Global objects
 camera = None
