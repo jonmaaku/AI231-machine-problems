@@ -31,13 +31,13 @@ except ImportError:
 app = FastAPI(title="Jetson POS System")
 
 # Camera configuration
-CAMERA_INDEX = 1  # USB camera index (usually 0, adjust if needed)
+CAMERA_INDEX = 0  # USB camera index (usually 0, adjust if needed)
 VGA_WIDTH = 1080
 VGA_HEIGHT = 720
 FPS = 60
 
 # YOLO configuration
-YOLO_MODEL = "weights\\v2dataset_yolo11n_best.pt" 
+YOLO_MODEL = "weights\\v4dataset_yolo11n_best.pt" 
 # YOLO_MODEL = "best.pt" 
 CONFIDENCE_THRESHOLD = 0.5
 IOU_THRESHOLD = 0.45

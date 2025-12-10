@@ -19,76 +19,86 @@ import random
 from pathlib import Path
 import ultralytics
 
-print("All libraries installed and imported successfully!")
-print(f"Ultralytics version: {ultralytics.__version__ if 'ultralytics' in globals() else 'Not available'}")
-print(f"PyTorch version: {torch.__version__}")
-print(f"Matplotlib version: {plt.matplotlib.__version__}")
-print(f"OpenCV version: {cv2.__version__}")
+if __name__ == '__main__':
+    # Fix for Windows: disable pinning memory for data loader
+    torch.multiprocessing.freeze_support()
+        
+    print("All libraries installed and imported successfully!")
+    print(f"Ultralytics version: {ultralytics.__version__ if 'ultralytics' in globals() else 'Not available'}")
+    print(f"PyTorch version: {torch.__version__}")
+    print(f"Matplotlib version: {plt.matplotlib.__version__}")
+    print(f"OpenCV version: {cv2.__version__}")
 
-# Copilot prompt:
-# Load the latest YOLO model (e.g., yolov11n.pt if available, otherwise yolov8n.pt) using the Ultralytics library.
-# Show the model summary.
+    # Copilot prompt:
+    # Load the latest YOLO model (e.g., yolov11n.pt if available, otherwise yolov8n.pt) using the Ultralytics library.
+    # Show the model summary.
 
 
-# configurations
-dataset_path = ".././data/mp7/dataset_complete_v4"
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-train_project='MP7_Object_Detection'
-train_name='v4dataset_yolov11n_augmented'
-model_name = "C:\\Users\\jhon\\Desktop\\Coding\\AI\\AI231-machine-problems\\MP7\\MP7_Object_Detection\\v2dataset_yolov11n_augmented3\\weights\\best.pt"  # Change to "yolov8n.pt" if yolov11n is not available
-data_yml_path = os.path.join(dataset_path, 'data.yaml')
+    # configurations
+    dataset_path = ".././data/mp7/dataset_complete_v4"
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    train_project='MP7_Object_Detection'
+    train_name='v4dataset_yolov11n_augmented'
+    model_name = "C:\\Users\\jhon\\Desktop\\Coding\\AI\\AI231-machine-problems\\MP7\\MP7_Object_Detection\\v2dataset_yolov11n_augmented3\\weights\\best.pt"  # Change to "yolov8n.pt" if yolov11n is not available
+    data_yml_path = os.path.join(dataset_path, 'data.yaml')
+    
+    # Set Windows-specific PyTorch settings
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        # Disable pin_memory on Windows to avoid shared memory issues
+        torch.multiprocessing.set_sharing_strategy('file_system')
 
-# Load class names from data.yaml
-with open(data_yml_path, 'r') as f:
-    data_yaml = yaml.safe_load(f)
-    class_names = data_yaml.get('names', [])
-    print(f"Loaded {len(class_names)} classes from data.yaml")
+    # Load class names from data.yaml
+    with open(data_yml_path, 'r') as f:
+        data_yaml = yaml.safe_load(f)
+        class_names = data_yaml.get('names', [])
+        print(f"Loaded {len(class_names)} classes from data.yaml")
 
-# Try to load the latest YOLO model
-def load_yolo_model():      
-    try:
-        # Try YOLOv11n first (latest)
-        model = YOLO("mp4_best.pt")
-        print("Loaded MP4 Best model successfully!")
-    except:
+    # Try to load the latest YOLO model
+    def load_yolo_model():      
         try:
-            # Fallback to YOLOv8n
-            model = YOLO('yolov8n.pt')
-            print("Loaded YOLOv8n model successfully!")
+            # Try YOLOv11n first (latest)
+            model = YOLO(model=model_name)
+            print("Loaded MP4 Best model successfully!")
         except:
             print("Error loading YOLO model. Please check your internet connection.")
-            model = None
 
-    if model is not None:
-        # Show model information
-        print(f"\nModel architecture: {model.model}")
-        print(f"Model task: {model.task}")
-        
-        # Print model summary
-        model.info(detailed=True)
-        
-        print(f"\nModel loaded successfully and ready for training!")
-    else:
-        print("Failed to load YOLO model.")
-    return model
+        if model is not None:
+            # Show model information
+            print(f"\nModel architecture: {model.model}")
+            print(f"Model task: {model.task}")
+            
+            # Print model summary
+            model.info(detailed=True)
+            
+            print(f"\nModel loaded successfully and ready for training!")
+        else:
+            print("Failed to load YOLO model.")
+        return model
 
 
-if __name__ == '__main__':
     model = load_yolo_model()
 
     results = model.train(
         data=f"{dataset_path}/data.yaml",
         epochs=100,
         imgsz=640,
-        batch=16,
+        batch=8,
         device=device,
         project=train_project,
         name=train_name,
         save=True,
-        cache=True,
-        workers=8,
+        cache=False,  # Disable cache on Windows to avoid memory issues
+        workers=0,  # Set to 0 on Windows to avoid shared memory errors
         patience=50,  # Early stopping patience
         save_period=50,  # Save checkpoint every 50 epochs
+        degrees=10,
+        translate=0.1,
+        scale=0.1,
+        hsv_s=0.2,
+        hsv_v=0.2,
+        mosaic=0.5,
+        fliplr=0.5,
         # hsv_s=0.1,  # Enable HSV saturation augmentation
         # hsv_h=0.1,  # Enable HSV Hue Adjustment
         # hsv_v=0.1,  # Enable HSV Value Adjustment
@@ -100,7 +110,7 @@ if __name__ == '__main__':
         # flipud=0.05,  # Enable vertical flip augmentation (5% chance)
         # fliplr=0.05,  # Enable horizontal flip augmentation (5% chance)
         # bgr=0.05, # Enable BGR augmentation (5% chance)
-        mosaic=0.5,  # Mosaic augmentation (50% chance of being combined with three other images)
+        # mosaic=0.5,  # Mosaic augmentation (50% chance of being combined with three other images)
         # mixup=0.5,  # Mixup augmentation (30% chance of being blended with another image),
         # cutmix=0.5,  # CutMix augmentation (50% chance of being combined with another image)
         # copy_paste=0.5,  # Copy-paste augmentation (50% chance of copying objects from another image)

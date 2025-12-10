@@ -598,13 +598,27 @@
         let lastFpsUpdate = Date.now();
         let lastAddedItems = {};  // Track recently added items to prevent duplicates
         const DUPLICATE_COOLDOWN = 2000;  // 2 seconds before same item can be added again
+        let cart = [];  // Frontend cart storage
+        const audio = new Audio("../public/beep-08b.wav");
 
         // Initialize
         window.onload = function() {
             initVideoStream();
+            initCart();  // Initialize cart from storage or empty
             loadCart();
             startAutoScan();
         };
+
+        // Initialize cart from local storage or create empty cart
+        function initCart() {
+            const savedCart = localStorage.getItem('pos-cart');
+            cart = savedCart ? JSON.parse(savedCart) : [];
+        }
+
+        // Save cart to local storage
+        function saveCart() {
+            localStorage.setItem('pos-cart', JSON.stringify(cart));
+        }
 
         // Video stream
         function initVideoStream() {
@@ -645,7 +659,8 @@
                         // Only add if item hasn't been added recently (within cooldown period)
                         if (durationSinceLastAdd > DUPLICATE_COOLDOWN) {
                             addToCart(item);
-                            
+                            // Play sound after adding item
+                            audio.play();
                         }
                         lastAddedItems[item.name] = currentTime;  // Update last added time
                     });
@@ -694,34 +709,34 @@
             requestAnimationFrame(updateFPS);
         }
 
-        // Add to cart
-        async function addToCart(item) {
-            try {
-                const response = await fetch(`${SERVER_URL}/api/cart/add`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(item)
+        // Add to cart (frontend only - no server call)
+        function addToCart(item) {
+            // Check if item already exists in cart
+            const existingItem = cart.find(cartItem => cartItem.name === item.name);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                // Add new item with quantity 1
+                cart.push({
+                    name: item.name,
+                    category: item.category || 'Unknown',
+                    price: item.price || 0,
+                    quantity: 1
                 });
-                
-                const data = await response.json();
-                if (data.success) {
-                    await loadCart();
-                }
-            } catch (error) {
-                console.error('Add to cart error:', error);
             }
+            
+            saveCart();
+            loadCart();
         }
 
-        // Load cart
-        async function loadCart() {
-            try {
-                const response = await fetch(`${SERVER_URL}/api/cart`);
-                const data = await response.json();
-                
-                updateCartDisplay(data);
-            } catch (error) {
-                console.error('Load cart error:', error);
-            }
+        // Load cart (frontend only - no server call)
+        function loadCart() {
+            updateCartDisplay({
+                items: cart,
+                total_items: cart.reduce((sum, item) => sum + item.quantity, 0),
+                total_price: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+            });
         }
 
         // Update cart display
@@ -765,67 +780,64 @@
             }
         }
 
-        // Update quantity
-        async function updateQuantity(itemName, quantity) {
-            try {
-                const response = await fetch(`${SERVER_URL}/api/cart/update?item_name=${encodeURIComponent(itemName)}&quantity=${quantity}`, {
-                    method: 'POST'
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    await loadCart();
-                }
-            } catch (error) {
-                console.error('Update quantity error:', error);
+        // Update quantity (frontend only)
+        function updateQuantity(itemName, quantity) {
+            if (quantity <= 0) {
+                removeItem(itemName);
+                return;
+            }
+            
+            const item = cart.find(cartItem => cartItem.name === itemName);
+            if (item) {
+                item.quantity = quantity;
+                saveCart();
+                loadCart();
             }
         }
 
-        // Remove item
-        async function removeItem(itemName) {
-            try {
-                const response = await fetch(`${SERVER_URL}/api/cart/remove?item_name=${encodeURIComponent(itemName)}`, {
-                    method: 'POST'
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    await loadCart();
-                }
-            } catch (error) {
-                console.error('Remove item error:', error);
-            }
+        // Remove item (frontend only)
+        function removeItem(itemName) {
+            cart = cart.filter(item => item.name !== itemName);
+            saveCart();
+            loadCart();
         }
 
-        // Clear cart
-        async function clearCart() {
+        // Clear cart (frontend only)
+        function clearCart() {
             if (!confirm('Clear all items from cart?')) return;
             
-            try {
-                const response = await fetch(`${SERVER_URL}/api/cart/clear`, {
-                    method: 'POST'
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    await loadCart();
-                }
-            } catch (error) {
-                console.error('Clear cart error:', error);
-            }
+            cart = [];
+            saveCart();
+            loadCart();
         }
 
-        // Checkout
+        // Checkout (sends to server but manages receipt locally)
         async function checkout() {
+            if (cart.length === 0) {
+                alert('Cart is empty');
+                return;
+            }
+            
             try {
                 const response = await fetch(`${SERVER_URL}/api/cart/checkout`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        items: cart,
+                        total_items: cart.reduce((sum, item) => sum + item.quantity, 0),
+                        total_price: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+                    })
                 });
                 
                 const receipt = await response.json();
                 showReceipt(receipt);
+                
+                // Clear cart after successful checkout
+                cart = [];
+                saveCart();
             } catch (error) {
                 console.error('Checkout error:', error);
+                alert('Checkout failed. Please try again.');
             }
         }
 
@@ -856,6 +868,7 @@
         // Close receipt
         function closeReceipt() {
             document.getElementById('receiptModal').classList.remove('show');
+            loadCart();  // Refresh display to show empty cart
         }
     </script>
 </body>
